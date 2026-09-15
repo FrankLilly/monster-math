@@ -127,7 +127,7 @@ nav{width:100%;max-width:650px}nav button{flex:1}.template-panel{padding:14px 20
 .sp-unlock button{margin-top:10px;font-size:18px}
 
 /* Monster Math: just the monster and the math */
-nav,.intro h1,#welcome,#activeCompanion,.sp-places,.sp-world-btns,#grownups,.local,footer{display:none!important}
+nav,.intro h1,#welcome,#activeCompanion,#grownups,.local,footer{display:none!important}
 
 /* Password screen */
 html.locked main,html.locked header{display:none!important}

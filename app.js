@@ -1,7 +1,7 @@
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const KEY='monster-math-v1';
-/* Monster Math: math and story-problem rounds only; rewards build the monster (no spelling, rooms or town). Saves on this device. */
+/* Monster Math: math and story-problem rounds (no spelling). Monster, rooms, houses and town are all here. Saves on this device. */
 const initial=()=>({name:'Lilly',level:'starter',stars:0,counts:{math:0,spelling:0,reading:0},design:{template:'monster',built:['body','face','feet'],color:'#78ad72',face:'happy',hat:'none',height:2,width:2},gallery:[],trials:[],rewarded:[]});
 let state=initial();try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.design&&s.counts&&Array.isArray(s.gallery)&&Array.isArray(s.trials)&&Array.isArray(s.rewarded))state={...state,...s};}catch{}
 if(!state.name)state.name='Lilly';
@@ -383,7 +383,7 @@ function spStartPhase(){return spIsMath(state.spell)?'math':spWord().type==='mem
 function spNextRound(s){s.round++;s.kind=s.kind==='math'?'story':'math';s.pos=0;s.order=spShuffleOrder(s.kind);s.choices=null;s.phase=spStartPhase();spRun=null;}
 function spAvailable(m,round){const town=state.spell&&state.spell.town;return Object.keys(SP_PARTS).filter(k=>{const p=SP_PARTS[k];if(p.cat==='town'||p.cat==='people')return (round||1)>=2&&!!(town&&town.style)&&!(town.buildings||[]).includes(k);return (round||1)>=SP_CATS[p.cat].round&&(m.parts[k]||0)<p.max&&k!=='paint';});}
 function spMakeChoices(){
- const s=state.spell,m=s.monster,pool=shuffle([...spAvailable(spM(m),s.round).filter(k=>['monster','accessory'].includes(SP_PARTS[k].cat)),'paint']),picks=[];
+ const s=state.spell,m=s.monster,pool=shuffle([...spAvailable(spM(m),s.round).filter(k=>spLevel(m)>=2||['monster','accessory'].includes(SP_PARTS[k].cat)),'paint']),picks=[];
  const newest=Math.max(...pool.map(k=>SP_CATS[SP_PARTS[k].cat].round));
  const cats=[...new Set(pool.filter(k=>SP_CATS[SP_PARTS[k].cat].round===newest).map(k=>SP_PARTS[k].cat))].slice(0,1);
  shuffle([...new Set(pool.map(k=>SP_PARTS[k].cat))]).forEach(c=>{if(!cats.includes(c))cats.push(c);});
@@ -484,7 +484,7 @@ const SP_WORLD_CATS=['family','room','toy','yard','party','space','castle','sea'
 function spIsWorld(k){return !!SP_PARTS[k]&&SP_WORLD_CATS.includes(SP_PARTS[k].cat);}
 function spWhere(m,k){return (m.where&&m.where[k])||SP_CATS[SP_PARTS[k].cat].place||'home';}
 function spWall(m,room){return m.walls&&m.walls[room]!==undefined?m.walls[room]:room==='home'?((m.parts&&m.parts.r_paint)||0):0;}
-function spRoomsFor(m,round){return [];return Object.keys(SP_PLACES).filter(pl=>pl==='home'?round>=2||spHasWorld(m):round>=SP_CATS[pl].round||Object.keys(m.parts||{}).some(k=>spIsWorld(k)&&spWhere(m,k)===pl));}
+function spRoomsFor(m,round){return Object.keys(SP_PLACES).filter(pl=>pl==='home'?round>=2||spHasWorld(m):round>=SP_CATS[pl].round||Object.keys(m.parts||{}).some(k=>spIsWorld(k)&&spWhere(m,k)===pl));}
 function spPlacesOf(m){return Object.keys(SP_PLACES).filter(pl=>Object.keys(m.parts||{}).some(k=>spIsWorld(k)&&spWhere(m,k)===pl));}
 function spHasWorld(m){return Object.keys(m.parts||{}).some(spIsWorld);}
 const SP_SLOTS={home:[340,388,436,484,532,580,628].map(x=>[x,196,40]).concat([180,226,272].map(x=>[x,236,38])),
@@ -591,13 +591,13 @@ function renderSpell(){
  const s=ensureSpell(),w=spWord(),q=spProblem(),m=s.monster,isMath=!!q,total=s.order.length;
  const done=s.phase==='roundDone'?s.round:s.round-1;
  $('#spRound').innerHTML=`<strong>Round ${s.round} · ${s.kind==='story'?'📖 Story problems':isMath?'🔢 Math':'🔤 Spelling'}</strong><span>${s.phase==='roundDone'?'Round done!':`${isMath?'Problem':'Word'} ${s.pos+1} of ${total}`}</span>`;
- $('#spBadges').innerHTML=done>0?`<span>Medals:</span> ${Array.from({length:done},(_,i)=>`<i>${MATH_MEDALS[i%MATH_MEDALS.length]}</i>`).join('')}`:'<span>Finish a round to earn a medal!</span>';
+ $('#spBadges').innerHTML=done>0?`<span>Badges:</span> ${Array.from({length:done},(_,i)=>`<i title="${spChapter(i+1).name}">${spChapter(i+1).icon}</i>`).join('')}`:'<span>Finish a round to earn a badge!</span>';
  const places=spPlacesOf(m);
  const rooms=spRoomsFor(spM(m),s.round),sel=m.room||'home';
  $('#spPlaces').innerHTML=rooms.length?`<span>Move my monster to:</span>${rooms.map(pl=>`<button data-sp-place="${pl}" class="${sel===pl?'on':''}">${SP_PLACES[pl].icon} ${SP_PLACES[pl].name}</button>`).join('')}`:'';
  $('#spDots').innerHTML=s.order.map((_,i)=>`<i class="${i<s.pos||s.phase==='roundDone'||(i===s.pos&&s.phase==='pick')?'done':i===s.pos?'now':''}"></i>`).join('');
  $('#spMonster').innerHTML=spellMonster(m);
- $('#spPartsCount').textContent=`👾 ${spPartCount(m)} monster parts`+(s.phase==='roundDone'?'':' · Finish this round to earn a medal!');
+ const next=SP_CHAPTERS[s.round];$('#spPartsCount').textContent=`👾 ${spPartCount(m)} monster parts · 🏠 ${Object.values((s.world||{}).parts||{}).reduce((a,b)=>a+b,0)} world things`+(s.phase==='roundDone'?'':spLevel(m)<2?' · New monster! Finish this round to win room, car & town rewards again.':next?` · Finish this round to unlock ${next.icon} ${next.name}!`:'');
  const saved=Number.isInteger(s.savedIdx)&&s.shelf[s.savedIdx];
  $('#spSave').textContent=saved?`✓ Saved as ${saved.name}`:'💾 Save my monster';$('#spSave').classList.toggle('is-saved',!!saved);
  $('#spShelf').innerHTML=s.shelf.length?s.shelf.map((x,i)=>`<button data-sp-load="${i}" class="${i===s.savedIdx?'current':''}">${spellMonster(i===s.savedIdx?m:x.monster)}<span>${escapeHTML(x.name)}</span><small>${i===s.savedIdx?'Building now':'Keep building'}</small></button>`).join(''):'<p>Tap 💾 Save to put your monster here.</p>';
@@ -623,7 +623,7 @@ function renderSpell(){
   card.innerHTML=`<div class="sp-win"><div class="sp-bigword">${q?mathDoneText(q):w.w}</div><h2>🎉 ${q?'You got it!':'You spelled it!'}</h2><p>Pick a reward to add${spRoomsFor(m,s.round).length?` · it goes in <b>${SP_PLACES[m.room||'home'].icon} ${SP_PLACES[m.room||'home'].name}</b>`:''}:</p></div><div class="sp-choices">${s.choices.map(k=>`<button data-sp-part="${k}"><span class="sp-big">${k==='paint'?'🎨':SP_PARTS[k].icon}</span>${SP_PARTS[k]&&(SP_PARTS[k].cat==='town'||SP_PARTS[k].cat==='people')?spTownItemPreview(k):spellMonster(spWithPart(spM(m),k))}<span class="sp-cat">${SP_CATS[SP_PARTS[k].cat].name}</span><strong>${SP_PARTS[k].icon} ${SP_PARTS[k].name}</strong></button>`).join('')}</div>`;
  }else{
   const ch=spChapter(s.round),unlock=SP_CHAPTERS[s.round],nextKind=s.kind==='math'?'story':'math';
-  card.innerHTML=`<div class="sp-win"><div class="sp-trophy">🏆</div><h2>Round ${s.round} done!</h2><p>${s.kind==='story'?`You solved all ${total} story problems`:isMath?`You solved all ${total} math problems`:`You spelled all ${SPELL_WORDS.length} words`} and built ${spPartCount(m)} things!</p><div class="sp-badge-earned">You earned a medal: <b>${MATH_MEDALS[(s.round-1)%MATH_MEDALS.length]}</b></div><button class="primary" id="spAgain">${nextKind==='math'?'Next: 🔢 Math round →':nextKind==='story'?'Next: 📖 Story problems →':'Next: 🔤 Spelling round →'}</button>${isMath?'':`<div class="sp-review">${SPELL_WORDS.map(x=>`<span>${x.pic} ${x.w}</span>`).join('')}</div>`}</div>`;
+  card.innerHTML=`<div class="sp-win"><div class="sp-trophy">🏆</div><h2>Round ${s.round} done!</h2><p>${s.kind==='story'?`You solved all ${total} story problems`:isMath?`You solved all ${total} math problems`:`You spelled all ${SPELL_WORDS.length} words`} and built ${spPartCount(m)} things!</p><div class="sp-badge-earned">You earned a badge: <b>${ch.icon} ${ch.name}</b></div>${unlock?`<div class="sp-unlock">🔓 <b>Unlocked next:</b><br>${unlock.icon} ${unlock.name} rewards!</div>`:''}${s.town?`<div class="sp-unlock">🎁 <b>You won 3 things</b> to put inside your town buildings!<br><button id="spFillBuilding">🏢 Put them in a building</button></div>`:''}<button class="primary" id="spAgain">${nextKind==='math'?'Next: 🔢 Math round →':nextKind==='story'?'Next: 📖 Story problems →':'Next: 🔤 Spelling round →'}</button>${isMath?'':`<div class="sp-review">${SPELL_WORDS.map(x=>`<span>${x.pic} ${x.w}</span>`).join('')}</div>`}</div>`;
  }
  const on=(id,f)=>{const e=$('#'+id);if(e)e.onclick=f;};
  on('spHear',spSpeakWord);
