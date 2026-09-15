@@ -279,12 +279,56 @@ const STORY_BANK=[
  ['more',9,6,'star','Lilly has 9 star stickers. Her friend has 6. How many more stickers does Lilly have?']
 ].map(([op,a,b,o,text])=>({kind:'word',op,a,b,o,text}));
 const STORY_ROUND_SIZE=8;
-function mathAnswer(q){return q.kind==='count'?q.a:q.op==='+'?q.a+q.b:q.a-q.b;}
+function mathAnswer(q){switch(q.kind){case 'missing':return q.b-q.a;case 'make10':return 10-q.a;case 'doubles':return q.a*2;case 'sub20':return q.a-q.b;case 'compare':return q.small?Math.min(q.a,q.b):Math.max(q.a,q.b);case 'skip':return q.a;case 'next':return q.dir==='after'?q.a+1:q.a-1;case 'tens':return q.a*10+q.b;case 'time':return q.a+':00';case 'shape':case 'measure':case 'tally':return q.a;default:return q.kind==='count'?q.a:q.op==='+'?q.a+q.b:q.a-q.b;}}
 const MATH_SAY={
  prompt:q=>q.kind==='word'?q.text:q.kind==='count'?`How many ${MATH_OBJ[q.o][2]}? | Count carefully!`:q.op==='+'?`What is ${q.a} plus ${q.b}?`:`What is ${q.a} take away ${q.b}?`,
  win:q=>q.kind==='count'?`Yes! There are ${q.a} ${MATH_OBJ[q.o][2]}! | Pick a reward!`:q.op==='more'?`Yes! ${q.a} is ${mathAnswer(q)} more than ${q.b}! | Pick a reward!`:`Yes! ${q.a} ${q.op==='+'?'plus':'take away'} ${q.b} is ${mathAnswer(q)}! | Pick a reward!`,
  hint:q=>q.kind==='count'?'A full ten frame is 10. | Then count the rest.':q.op==='more'?'Match them up, one and one. | Count the extra ones that have no partner.':q.op==='+'?'Count them all together. | Start at 1 and keep going.':'Count only the ones that are not crossed out.'
 };
+/* More first-grade variety: missing numbers, make 10, doubles, teen take-away, compare, skip counting,
+   before/after, tens & ones, time to the hour, shapes, measuring and tally marks. All fixed so audio can be recorded. */
+(function(){const P=x=>MATH_BANK.push(x);
+ [[3,7,'star'],[5,9,'apple'],[2,6,'frog'],[4,10,'balloon'],[6,8,'duck'],[1,5,'cookie'],[7,10,'bug']].forEach(([a,b,o])=>P({kind:'missing',a,b,o}));
+ [7,4,9,6,2,8,3,5].forEach(a=>P({kind:'make10',a,b:0,o:'star'}));
+ [5,6,7,8,9,4].forEach(a=>P({kind:'doubles',a,b:a,o:'apple'}));
+ [[12,2],[15,5],[14,4],[18,8],[13,3],[17,7],[16,2],[19,4]].forEach(([a,b])=>P({kind:'sub20',a,b,o:'cupcake'}));
+ [[47,52],[18,81],[36,33],[90,19],[64,46],[25,52],[71,17],[58,85]].forEach(([a,b],i)=>P({kind:'compare',a,b,small:i%2===1}));
+ [[10,20,30,40],[20,30,40,50],[50,60,70,80],[30,40,50,60],[5,10,15,20],[15,20,25,30],[2,4,6,8],[6,8,10,12]].forEach(seq=>P({kind:'skip',seq,a:seq[3],b:seq[1]-seq[0]}));
+ [[29,'after'],[59,'after'],[99,'after'],[40,'after'],[17,'after'],[30,'before'],[50,'before'],[71,'before'],[100,'before']].forEach(([a,dir])=>P({kind:'next',a,dir}));
+ [[3,4],[2,7],[5,0],[1,6],[4,5],[6,2],[7,3],[1,9]].forEach(([a,b])=>P({kind:'tens',a,b}));
+ [3,7,9,12,1,5,10,6].forEach(a=>P({kind:'time',a}));
+ [['triangle',3],['square',4],['rectangle',4],['pentagon',5],['hexagon',6]].forEach(([name,a])=>P({kind:'shape',name,a}));
+ [['pencil','✏️',5],['crayon','🖍️',3],['snake','🐍',7],['worm','🪱',4],['train','🚂',6],['ribbon','🎀',8]].forEach(([name,e,a])=>P({kind:'measure',name,e,a}));
+ [7,9,12,6,11,8,14].forEach(a=>P({kind:'tally',a}));
+})();
+const MATH_NEW={
+ missing:{p:q=>`${q.a} plus what number makes ${q.b}?`,w:q=>`Yes! ${q.a} plus ${q.b-q.a} makes ${q.b}! | Pick a reward!`,h:()=>'Start at the first number. | Count up until you reach the total.',l:['🧩','Missing number'],eq:q=>`${q.a} + ? = ${q.b}`,done:q=>`${q.a} + ${q.b-q.a} = ${q.b}`},
+ make10:{p:q=>`There are ${q.a} stars. | How many more make 10?`,w:q=>`Yes! ${q.a} and ${10-q.a} make 10! | Pick a reward!`,h:()=>'Count the empty boxes in the ten frame.',l:['🔟','Make 10'],eq:q=>`${q.a} + ? = 10`,done:q=>`${q.a} + ${10-q.a} = 10`},
+ doubles:{p:q=>`What is ${q.a} plus ${q.a}?`,w:q=>`Yes! Double ${q.a} is ${q.a*2}! | Pick a reward!`,h:()=>'Count both ten frames. | A full frame is 10.',l:['👯','Doubles'],eq:q=>`${q.a} + ${q.a} = ?`,done:q=>`${q.a} + ${q.a} = ${q.a*2}`},
+ sub20:{p:q=>`What is ${q.a} take away ${q.b}?`,w:q=>`Yes! ${q.a} take away ${q.b} is ${q.a-q.b}! | Pick a reward!`,h:()=>'Count only the ones that are not crossed out.',l:['🔢','Taking away'],eq:q=>`${q.a} − ${q.b} = ?`,done:q=>`${q.a} − ${q.b} = ${q.a-q.b}`},
+ compare:{p:q=>`Which number is ${q.small?'smaller':'bigger'}, ${q.a} or ${q.b}?`,w:q=>`Yes! ${mathAnswer(q)} is ${q.small?'smaller':'bigger'}! | Pick a reward!`,h:()=>'Look at the tens first. | More tens means a bigger number.',l:['⚖️','Bigger or smaller'],eq:q=>`Which is ${q.small?'smaller':'bigger'}?`,done:q=>`${mathAnswer(q)} is ${q.small?'smaller':'bigger'}`},
+ skip:{p:q=>`Count by ${q.b}s: ${q.seq.slice(0,3).join(', ')}. | What comes next?`,w:q=>`Yes! ${q.seq.join(', ')}! | Pick a reward!`,h:q=>`Add ${q.b} more each time.`,l:['🦘','Skip counting'],eq:q=>`${q.seq.slice(0,3).join(', ')}, ?`,done:q=>q.seq.join(', ')},
+ next:{p:q=>`What number comes ${q.dir} ${q.a}?`,w:q=>`Yes! ${mathAnswer(q)} comes ${q.dir} ${q.a}! | Pick a reward!`,h:q=>q.dir==='after'?'After means one more.':'Before means one less.',l:['➡️','Before & after'],eq:q=>q.dir==='after'?`${q.a}, ?`:`?, ${q.a}`,done:q=>q.dir==='after'?`${q.a}, ${q.a+1}`:`${q.a-1}, ${q.a}`},
+ tens:{p:()=>'How many blocks? | Count the tens, then the ones.',w:q=>`Yes! ${q.a} tens and ${q.b} ones make ${q.a*10+q.b}! | Pick a reward!`,h:()=>'Each tall stick is 10. | Count by tens, then count the little cubes.',l:['🧱','Tens & ones'],eq:()=>'How many blocks?',done:q=>`${q.a} tens + ${q.b} ones = ${q.a*10+q.b}`},
+ time:{p:()=>'What time does the clock show?',w:q=>`Yes! It is ${q.a} o'clock! | Pick a reward!`,h:()=>'The short hand points to the hour. | The long hand is on the 12.',l:['🕒','Tell time'],eq:()=>'What time is it?',done:q=>`${q.a}:00`},
+ shape:{p:q=>`How many sides does a ${q.name} have?`,w:q=>`Yes! A ${q.name} has ${q.a} sides! | Pick a reward!`,h:()=>'Touch each side and count.',l:['🔷','Shapes'],eq:q=>`How many sides?`,done:q=>`${q.a} sides`},
+ measure:{p:q=>`How many cubes long is the ${q.name}?`,w:q=>`Yes! The ${q.name} is ${q.a} cubes long! | Pick a reward!`,h:()=>'Count the cubes under it, one by one.',l:['📏','Measure'],eq:()=>'How many cubes long?',done:q=>`${q.a} cubes long`},
+ tally:{p:()=>'How many tally marks?',w:q=>`Yes! There are ${q.a} tally marks! | Pick a reward!`,h:()=>'Each bundle with a line across is 5. | Count 5, 10, then the rest.',l:['✋','Tally marks'],eq:()=>'How many tally marks?',done:q=>String(q.a)}
+};
+{const op=MATH_SAY.prompt,ow=MATH_SAY.win,oh=MATH_SAY.hint;
+ MATH_SAY.prompt=q=>MATH_NEW[q.kind]?MATH_NEW[q.kind].p(q):op(q);
+ MATH_SAY.win=q=>MATH_NEW[q.kind]?MATH_NEW[q.kind].w(q):ow(q);
+ MATH_SAY.hint=q=>MATH_NEW[q.kind]?MATH_NEW[q.kind].h(q):oh(q);}
+function mathLabel(q){return MATH_NEW[q.kind]?MATH_NEW[q.kind].l:q.kind==='word'?['📖','Story problem']:q.kind==='count'?['🔢','Counting']:q.op==='+'?['🔢','Adding']:['🔢','Taking away'];}
+function mathEq(q){return MATH_NEW[q.kind]?MATH_NEW[q.kind].eq(q):q.kind==='count'?`How many ${MATH_OBJ[q.o][2]}?`:q.kind==='word'?'':`${q.a} ${q.op==='+'?'+':'−'} ${q.b} = ?`;}
+function mathDoneText(q){return MATH_NEW[q.kind]?MATH_NEW[q.kind].done(q):q.kind==='count'?String(q.a):`${q.a} ${q.op==='+'?'+':'−'} ${q.b} = ${mathAnswer(q)}`;}
+function mathChoices(q){
+ const ans=mathAnswer(q);
+ if(q.kind==='compare')return shuffle([q.a,q.b]).map(String);
+ if(q.kind==='time'){const h=q.a,o=[h%12+1,(h+5)%12+1].filter(x=>x!==h);return shuffle([`${h}:00`,...o.slice(0,2).map(x=>`${x}:00`)]);}
+ const step=q.kind==='skip'?q.b:1,opts=[ans,ans+step,ans-step,ans+2*step].filter(x=>x>=0);
+ return shuffle([...new Set(opts)].slice(0,3)).map(String);
+}
 /* Everything the spelling game says. make_audio.mjs records each line; " | " is a short pause. */
 const spCap=x=>x[0].toUpperCase()+x.slice(1);
 const SP_SAY={
@@ -316,7 +360,8 @@ function spM(m){const W=(state.spell&&state.spell.world)||{parts:{},where:{},wal
 function spIsMath(s){return !!s&&(s.kind==='math'||s.kind==='story');}
 function spBank(kind){return kind==='story'?STORY_BANK:MATH_BANK;}
 function spRoundSize(kind){return kind==='story'?STORY_ROUND_SIZE:kind==='math'?MATH_ROUND_SIZE:SPELL_WORDS.length;}
-function spShuffleOrder(kind){return kind==='spell'||!kind?shuffle(SPELL_WORDS.map((_,i)=>i)):shuffle(spBank(kind).map((_,i)=>i)).slice(0,spRoundSize(kind));}
+function spMixedOrder(bank,size){const by={};bank.forEach((q,i)=>(by[q.kind]=by[q.kind]||[]).push(i));const kinds=shuffle(Object.keys(by)),pools=kinds.map(k=>shuffle(by[k])),out=[];for(let r=0;out.length<size&&r<50;r++)pools.forEach(pl=>{if(out.length<size&&pl[r]!==undefined)out.push(pl[r]);});return shuffle(out);}
+function spShuffleOrder(kind){if(kind==='math')return spMixedOrder(MATH_BANK,MATH_ROUND_SIZE);return kind==='spell'||!kind?shuffle(SPELL_WORDS.map((_,i)=>i)):shuffle(spBank(kind).map((_,i)=>i)).slice(0,spRoundSize(kind));}
 function spOrderOk(s){const list=spIsMath(s)?spBank(s.kind):SPELL_WORDS,len=spRoundSize(s.kind);return Array.isArray(s.order)&&s.order.length===len&&s.order.every(i=>list[i]);}
 function ensureSpell(){
  const s=state.spell;
@@ -512,6 +557,28 @@ function spTiles(w){
 }
 function spSpeakCurrent(){const q=spProblem();speak(q?MATH_SAY.prompt(q):SP_SAY.prompt(spWord()));}
 function spMathVisual(q,hint){
+ const num=(n)=>hint?`<b>${n}</b>`:'';
+ const frame=(cells)=>`<div class="tenframe">${cells.join('')}</div>`;
+ const cell=(inner)=>`<span class="tf-cell">${inner||''}</span>`;
+ if(q.kind==='missing'){const e=MATH_OBJ[q.o][0];return `<div class="mq-row"><div class="mq-group">${Array.from({length:q.a},()=>`<span class="mq-obj">${e}</span>`).join('')}</div><span class="mq-op">+</span><div class="mq-group more">${Array.from({length:q.b-q.a},(_,i)=>`<span class="mq-obj mq-empty">?${num(i+1)}</span>`).join('')}</div></div><div class="mq-note">makes ${q.b}</div>`;}
+ if(q.kind==='make10'){let n=0;return `<div class="mq-frames">${frame(Array.from({length:10},(_,i)=>i<q.a?cell('<span class="mq-obj">⭐</span>'):cell(hint?`<span class="mq-obj mq-empty">${++n}</span>`:'')))}</div>`;}
+ if(q.kind==='doubles'){const f=()=>frame(Array.from({length:10},(_,i)=>cell(i<q.a?'<span class="mq-obj">🍎</span>':'')));return `<div class="mq-frames">${f()}<span class="mq-op">+</span>${f()}</div>`;}
+ if(q.kind==='sub20'){let n=0;const all=Array.from({length:20},(_,i)=>i<q.a?(i>=q.a-q.b?cell('<span class="mq-obj gone">🧁</span>'):cell(`<span class="mq-obj">🧁${num(++n)}</span>`)):cell(''));return `<div class="mq-frames">${frame(all.slice(0,10))}${frame(all.slice(10))}</div>`;}
+ if(q.kind==='compare')return `<div class="mq-numcards"><span>${q.a}</span><span>${q.b}</span></div>`;
+ if(q.kind==='skip')return `<div class="mq-numline">${q.seq.map((x,i)=>`<span class="${i===3?'q':''}">${i===3?'?':x}</span>`).join('<i>→</i>')}</div>`;
+ if(q.kind==='next')return `<div class="mq-numline">${q.dir==='after'?`<span>${q.a}</span><i>→</i><span class="q">?</span>`:`<span class="q">?</span><i>→</i><span>${q.a}</span>`}</div>`;
+ if(q.kind==='tens')return `<div class="mq-base10">${Array.from({length:q.a},(_,i)=>`<span class="rod">${'<i></i>'.repeat(10)}${hint?`<b>${(i+1)*10}</b>`:''}</span>`).join('')}<span class="ones">${Array.from({length:q.b},(_,i)=>`<i>${hint?i+1:''}</i>`).join('')}</span></div>`;
+ if(q.kind==='time'){const ang=q.a%12*30-90,rad=ang*Math.PI/180,hx=100+45*Math.cos(rad),hy=100+45*Math.sin(rad);
+  return `<svg class="mq-clock" viewBox="0 0 200 200"><circle cx="100" cy="100" r="92" fill="#fff" stroke="#253e37" stroke-width="8"/>${Array.from({length:12},(_,i)=>{const t=(i+1)*30-90,r=t*Math.PI/180;return `<text x="${100+72*Math.cos(r)}" y="${100+72*Math.sin(r)}" font-size="20" font-weight="800" text-anchor="middle" dominant-baseline="central" fill="#253e37" font-family="system-ui,sans-serif">${i+1}</text>`;}).join('')}<path d="M100 100L100 30" stroke="#5f86c4" stroke-width="6" stroke-linecap="round"/><path d="M100 100L${hx.toFixed(1)} ${hy.toFixed(1)}" stroke="#d9534f" stroke-width="10" stroke-linecap="round"/><circle cx="100" cy="100" r="7" fill="#253e37"/></svg>`;}
+ if(q.kind==='shape'){let pts;if(q.name==='rectangle')pts='25,60 175,60 175,140 25,140';else{const n=q.a,rot=n===4?45:-90;pts=Array.from({length:n},(_,i)=>{const a=(rot+i*360/n)*Math.PI/180;return `${(100+80*Math.cos(a)).toFixed(1)},${(105+80*Math.sin(a)).toFixed(1)}`;}).join(' ');}
+  return `<svg class="mq-shape" viewBox="0 0 200 200"><polygon points="${pts}" fill="#8fd3f4" stroke="#253e37" stroke-width="7" stroke-linejoin="round"/></svg>`;}
+ if(q.kind==='measure'){const W=q.a*48,col={pencil:'#f5cb63',crayon:'#e05d5d',snake:'#5e9e4b',worm:'#e79aa8',train:'#3f7fd0',ribbon:'#ef7fae'}[q.name]||'#8fd3f4';
+  const body=q.name==='pencil'||q.name==='crayon'?`<rect x="0" y="8" width="${W-34}" height="40" rx="6" fill="${col}" stroke="#253e37" stroke-width="3"/><path d="M${W-34} 8L${W-2} 28L${W-34} 48Z" fill="#f3d9b1" stroke="#253e37" stroke-width="3"/>`:`<rect x="1" y="8" width="${W-2}" height="40" rx="20" fill="${col}" stroke="#253e37" stroke-width="3"/>`;
+  return `<div class="mq-measure"><div class="mq-label">${q.e} ${q.name}</div><svg width="${W}" height="56" viewBox="0 0 ${W} 56" style="display:block">${body}</svg><div class="mq-cubes">${Array.from({length:q.a},(_,i)=>`<i>${hint?i+1:''}</i>`).join('')}</div></div>`;}
+ if(q.kind==='tally'){const groups=Math.floor(q.a/5),rest=q.a%5;let o='',x=10;
+  for(let g=0;g<groups;g++){for(let i=0;i<4;i++)o+=`<path d="M${x+i*14} 20V100" stroke="#253e37" stroke-width="7" stroke-linecap="round"/>`;o+=`<path d="M${x-6} 90L${x+48} 30" stroke="#d9534f" stroke-width="7" stroke-linecap="round"/>`;if(hint)o+=`<text x="${x+21}" y="128" font-size="22" font-weight="900" text-anchor="middle" fill="#28634d" font-family="system-ui,sans-serif">${(g+1)*5}</text>`;x+=80;}
+  for(let i=0;i<rest;i++)o+=`<path d="M${x+i*14} 20V100" stroke="#253e37" stroke-width="7" stroke-linecap="round"/>`;
+  return `<svg class="mq-tally" viewBox="0 0 ${x+rest*14+20} 140">${o}</svg>`;}
  const e=MATH_OBJ[q.o][0],item=(i,cls)=>`<span class="mq-obj ${cls||''}">${e}${hint&&cls!=='gone'?`<b>${i}</b>`:''}</span>`;
  if(q.kind==='count'){const cells=(from,count)=>Array.from({length:10},(_,i)=>`<span class="tf-cell">${i<count?item(from+i):''}</span>`).join('');
   return `<div class="mq-frames"><div class="tenframe">${cells(1,10)}</div><div class="tenframe">${cells(11,q.a-10)}</div></div>`;}
@@ -547,13 +614,13 @@ function renderSpell(){
   card.innerHTML=`${chip}<div class="sp-pic">${w.pic}</div><p class="sp-sentence">${blank}</p><div class="sp-slots">${[...w.w].map((l,i)=>`<span class="${i<spRun.got?'filled':i===spRun.got?'next':''}">${i<spRun.got?l:''}</span>`).join('')}</div><div class="sp-tiles">${spRun.tiles.map((t,i)=>`<button data-sp-tile="${i}" ${t.used?'disabled':''}>${t.l}</button>`).join('')}</div><div class="sp-feedback" id="spFeedback" role="status">${spRun.wrong>=2?`💡 ${w.tip}`:'Tap the letters in order.'}</div><div class="sp-actions"><button class="audio" id="spHear">🔊 Hear it</button><button class="audio" id="spPeek">👀 Peek</button></div>`;
  }else if(s.phase==='math'){
   const key=`math${s.round}-${s.pos}`,ans=mathAnswer(q);
-  if(!spRun||spRun.key!==key)spRun={key,wrong:0,tried:[],choices:shuffle([...new Set([ans,ans+1,ans>0?ans-1:ans+2,ans+2])].slice(0,3))};
-  const eq=q.kind==='count'?`How many ${MATH_OBJ[q.o][2]}?`:q.kind==='word'?'':`${q.a} ${q.op==='+'?'+':'−'} ${q.b} = ?`;
-  card.innerHTML=`<div class="sp-type math">${q.kind==='word'?'📖':'🔢'} ${q.kind==='word'?'Story problem':q.kind==='count'?'Counting':q.op==='+'?'Adding':'Taking away'}</div>${q.kind==='word'?`<p class="sp-sentence mq-story">${q.text}</p>`:''}${spMathVisual(q,spRun.wrong>=2)}${eq?`<div class="mq-eq">${eq}</div>`:''}<div class="mq-answers">${spRun.choices.map(c=>`<button data-sp-num="${c}" ${spRun.tried.includes(c)?'disabled':''}>${c}</button>`).join('')}</div><div class="sp-feedback" id="spFeedback" role="status">${spRun.wrong>=2?`💡 ${MATH_SAY.hint(q).replace(' | ',' ')}`:'Tap the answer.'}</div><div class="sp-actions"><button class="audio" id="spHear">🔊 Hear it</button></div>`;
+  if(!spRun||spRun.key!==key)spRun={key,wrong:0,tried:[],choices:mathChoices(q)};
+  const eq=mathEq(q),lab=mathLabel(q);
+  card.innerHTML=`<div class="sp-type math">${lab[0]} ${lab[1]}</div>${q.kind==='word'?`<p class="sp-sentence mq-story">${q.text}</p>`:''}${spMathVisual(q,spRun.wrong>=2)}${eq?`<div class="mq-eq">${eq}</div>`:''}<div class="mq-answers">${spRun.choices.map(c=>`<button data-sp-num="${c}" ${spRun.tried.includes(String(c))?'disabled':''}>${c}</button>`).join('')}</div><div class="sp-feedback" id="spFeedback" role="status">${spRun.wrong>=2?`💡 ${MATH_SAY.hint(q).replace(' | ',' ')}`:'Tap the answer.'}</div><div class="sp-actions"><button class="audio" id="spHear">🔊 Hear it</button></div>`;
  }else if(s.phase==='pick'){
   if(Array.isArray(s.choices))s.choices=s.choices.filter(k=>k==='paint'||SP_PARTS[k]);
   if(!Array.isArray(s.choices)||!s.choices.length)s.choices=spMakeChoices();
-  card.innerHTML=`<div class="sp-win"><div class="sp-bigword">${q?`${q.kind==='count'?q.a:`${q.a} ${q.op==='+'?'+':'−'} ${q.b} = ${mathAnswer(q)}`}`:w.w}</div><h2>🎉 ${q?'You got it!':'You spelled it!'}</h2><p>Pick a reward to add${spRoomsFor(m,s.round).length?` · it goes in <b>${SP_PLACES[m.room||'home'].icon} ${SP_PLACES[m.room||'home'].name}</b>`:''}:</p></div><div class="sp-choices">${s.choices.map(k=>`<button data-sp-part="${k}"><span class="sp-big">${k==='paint'?'🎨':SP_PARTS[k].icon}</span>${SP_PARTS[k]&&(SP_PARTS[k].cat==='town'||SP_PARTS[k].cat==='people')?spTownItemPreview(k):spellMonster(spWithPart(spM(m),k))}<span class="sp-cat">${SP_CATS[SP_PARTS[k].cat].name}</span><strong>${SP_PARTS[k].icon} ${SP_PARTS[k].name}</strong></button>`).join('')}</div>`;
+  card.innerHTML=`<div class="sp-win"><div class="sp-bigword">${q?mathDoneText(q):w.w}</div><h2>🎉 ${q?'You got it!':'You spelled it!'}</h2><p>Pick a reward to add${spRoomsFor(m,s.round).length?` · it goes in <b>${SP_PLACES[m.room||'home'].icon} ${SP_PLACES[m.room||'home'].name}</b>`:''}:</p></div><div class="sp-choices">${s.choices.map(k=>`<button data-sp-part="${k}"><span class="sp-big">${k==='paint'?'🎨':SP_PARTS[k].icon}</span>${SP_PARTS[k]&&(SP_PARTS[k].cat==='town'||SP_PARTS[k].cat==='people')?spTownItemPreview(k):spellMonster(spWithPart(spM(m),k))}<span class="sp-cat">${SP_CATS[SP_PARTS[k].cat].name}</span><strong>${SP_PARTS[k].icon} ${SP_PARTS[k].name}</strong></button>`).join('')}</div>`;
  }else{
   const ch=spChapter(s.round),unlock=SP_CHAPTERS[s.round],nextKind=s.kind==='math'?'story':'math';
   card.innerHTML=`<div class="sp-win"><div class="sp-trophy">🏆</div><h2>Round ${s.round} done!</h2><p>${s.kind==='story'?`You solved all ${total} story problems`:isMath?`You solved all ${total} math problems`:`You spelled all ${SPELL_WORDS.length} words`} and built ${spPartCount(m)} things!</p><div class="sp-badge-earned">You earned a medal: <b>${MATH_MEDALS[(s.round-1)%MATH_MEDALS.length]}</b></div><button class="primary" id="spAgain">${nextKind==='math'?'Next: 🔢 Math round →':nextKind==='story'?'Next: 📖 Story problems →':'Next: 🔤 Spelling round →'}</button>${isMath?'':`<div class="sp-review">${SPELL_WORDS.map(x=>`<span>${x.pic} ${x.w}</span>`).join('')}</div>`}</div>`;
@@ -580,8 +647,8 @@ document.addEventListener('click',e=>{
  const s=state.spell,w=spWord(),q=spProblem();
  if(b.dataset.spPlace){spChooseRoom(b.dataset.spPlace);return;}
  if(b.dataset.spNum!==undefined&&q&&s.phase==='math'){
-  const v=Number(b.dataset.spNum);
-  if(v===mathAnswer(q)){s.phase='pick';s.choices=spMakeChoices();s.solved=(s.solved||0)+1;state.stars++;$('#stars').textContent=state.stars;spPersist();renderSpell();setTimeout(()=>speak(MATH_SAY.win(q)),300);}
+  const v=String(b.dataset.spNum);
+  if(v===String(mathAnswer(q))){s.phase='pick';s.choices=spMakeChoices();s.solved=(s.solved||0)+1;state.stars++;$('#stars').textContent=state.stars;spPersist();renderSpell();setTimeout(()=>speak(MATH_SAY.win(q)),300);}
   else{spRun.wrong++;spRun.tried.push(v);b.classList.add('shake');if(spRun.wrong>=2){renderSpell();speak(MATH_SAY.hint(q));}else{$('#spFeedback').textContent='Not that one. Try again!';b.disabled=true;speak(SP_SAY.tryAgain());}}
   return;
  }

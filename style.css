@@ -135,3 +135,16 @@ html.locked main,html.locked header{display:none!important}
 .gate-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:32px;max-width:420px;width:100%;text-align:center}
 .gate-icon{font-size:56px}.gate-card h1{margin:6px 0}.gate-card input{margin:14px 0;font-size:20px;text-align:center}.gate-card button{width:100%;font-size:20px;min-height:56px}
 .gate-msg{color:#984c3f;font-weight:700;min-height:24px}
+
+/* More math kinds */
+.mq-empty{border:3px dashed #e39a3b;border-radius:12px;color:#b0561c;font-weight:900;font-size:30px;height:50px;display:grid;place-items:center}
+.mq-note{font-size:22px;font-weight:800;margin-top:-6px}
+.mq-numcards{display:flex;gap:28px;justify-content:center;margin:18px 0}.mq-numcards span{font-size:64px;font-weight:900;background:#f4f7ef;border-radius:18px;padding:10px 26px;border:3px solid #dce6d2}
+.mq-numline{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:22px 0}.mq-numline span{font-size:40px;font-weight:900;min-width:78px;padding:10px;border-radius:14px;background:#f4f7ef;border:3px solid #dce6d2}.mq-numline span.q{border:3px dashed #e39a3b;background:#fff1dc;color:#b0561c}.mq-numline i{font-style:normal;font-size:26px;color:var(--muted)}
+.mq-base10{display:flex;gap:10px;align-items:flex-end;justify-content:center;margin:18px 0;flex-wrap:wrap}.mq-base10 .rod{display:grid;grid-template-rows:repeat(10,22px);border:2px solid #2d5fa0;background:#3f7fd0;position:relative}.mq-base10 .rod i{border-bottom:2px solid #2d5fa0;width:26px}.mq-base10 .rod b{position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;border-radius:999px;font-size:13px;padding:1px 6px}
+.mq-base10 .ones{display:grid;grid-template-columns:repeat(3,28px);gap:4px;margin-left:12px}.mq-base10 .ones i{width:26px;height:26px;background:#f5cb63;border:2px solid #b78b34;font-style:normal;font-size:13px;font-weight:900;display:grid;place-items:center}
+.mq-clock,.mq-shape{width:220px;height:220px;display:block;margin:10px auto}
+.mq-measure{display:inline-block;margin:18px auto;text-align:left}.mq-thing{height:64px;display:flex;align-items:center;overflow:visible}.mq-thing span{display:inline-block;font-size:60px;line-height:1;transform-origin:left center}
+.mq-cubes{display:flex}.mq-cubes i{width:48px;height:40px;background:#9ad28a;border:2px solid #5e9e4b;font-style:normal;font-weight:900;display:grid;place-items:center}
+.mq-tally{height:150px;max-width:100%;display:block;margin:12px auto}
+.mq-label{font-size:26px;font-weight:800;margin-bottom:4px}
