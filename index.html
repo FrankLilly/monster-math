@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Monster Math</title><link rel="stylesheet" href="style.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Monster Math</title><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="style.css"></head>
 <body class="on-spell">
 <header><a class="brand" href="index.html"><span class="logo">▦</span> MONSTER<span>MATH</span></a><div class="header-right"><span class="local">● Saved on this device</span><button id="grownups" class="quiet">Grown-ups ⚙</button></div></header>
 <main><div class="intro"><div><div class="eyebrow">A LITTLE LAB FOR BIG IDEAS</div><h1>Let’s make a cool buddy!</h1><p id="welcome">Hello, inventor! Let’s make a wonderfully weird friend.</p></div><div class="stars">✦ <strong id="stars">0</strong><span>discovery stars</span></div></div>
@@ -11,4 +11,23 @@
 <section id="gallery" class="page"><div class="section-heading"><div class="eyebrow">MADE BY A LITTLE INVENTOR</div><h2>My wonderfully weird friends.</h2><p>Save a creation in the workshop, then keep experimenting.</p></div><div id="galleryGrid" class="gallery-grid"></div></section>
 <div id="toast" role="status"></div><div id="spOverlay" class="sp-overlay" hidden><div class="sp-overlay-card panel"><button class="close" id="spOverlayClose" aria-label="Close">×</button><div id="spOverlayBody"></div></div></div></main><footer>MONSTER WORKSHOP <span>Built for curious minds & happy mistakes.</span></footer>
 <dialog id="settings"><form method="dialog"><button class="close" aria-label="Close settings">×</button></form><div class="eyebrow">GROWN-UP CORNER</div><h2>A workshop at her pace.</h2><label for="childName">Inventor’s first name (optional)</label><input id="childName" maxlength="30"><label for="level">Learning level</label><select id="level"><option value="starter">Getting started · numbers to 5, simple words</option><option value="stretch">A little stretch · numbers to 10, spelling without a model</option></select><p>Read-aloud uses your browser’s available voice. You can read any prompt together. Progress stays in this browser; no accounts or tracking.</p><div id="progressSummary"></div><button id="saveSettings" class="primary">Save settings</button><button id="reset" class="quiet danger">Reset all progress</button></dialog>
+<div id="gate" class="gate" hidden><form id="gateForm" class="gate-card"><div class="gate-icon">🔒</div><h1>Monster Math</h1><p>Grown-ups: enter the password once. This tablet will remember it.</p><input id="gatePass" type="password" autocomplete="current-password" autocapitalize="off" aria-label="Password" placeholder="Password"><button class="primary" type="submit">Unlock</button><p id="gateMsg" class="gate-msg" role="status"></p></form></div>
+<script>
+/* Password screen. Only a SHA-256 hash of the password is stored here; the tablet remembers a correct entry. */
+(function(){
+ var HASH='6fad939f117c3314961e0b9018451df9ae474a0a67038ddf2adc9a831725b063',KEY='monster-math-unlocked',g=document.getElementById('gate');
+ function ok(){try{return localStorage.getItem(KEY)===HASH;}catch(e){return false;}}
+ if(ok())return;
+ document.documentElement.classList.add('locked');g.hidden=false;
+ var form=document.getElementById('gateForm');
+ document.getElementById('gatePass').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();form.requestSubmit?form.requestSubmit():form.dispatchEvent(new Event('submit',{cancelable:true}));}});
+ form.addEventListener('submit',async function(e){
+  e.preventDefault();var v=document.getElementById('gatePass').value.trim().toLowerCase();
+  var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));
+  var hex=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  if(hex===HASH){try{localStorage.setItem(KEY,HASH);}catch(e){}document.documentElement.classList.remove('locked');g.hidden=true;}
+  else{document.getElementById('gateMsg').textContent='That password is not right. Try again.';}
+ });
+})();
+</script>
 <script src="audio/clips.js"></script><script src="app.js"></script></body></html>
